@@ -9,19 +9,18 @@ from troposphere.ec2 import PortRange, NetworkAcl, Route, \
     SubnetNetworkAclAssociation, EIP, Instance, InternetGateway
 
 def region_input():
+    return 'eu-west-2'
     while True:
-        # try:
-            # choice = input("Enter the Region: ")
-            choice = 'eu-west-2'
+        try:
+            choice = input("Enter the Region: ")
             if choice in availableregions:
                 break
             else:
                 print("Invalid Region...Enter a valid Region")
                 print("Valid Regions are {0}".format(', '.join(availableregions)))
                 raise Exception('Invalid Choice')
-        # except:
-        #      continue
-
+        except:
+            continue
     return choice
 
 timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -29,6 +28,7 @@ timestr = time.strftime("%Y%m%d-%H%M%S")
 #this call can be made without valid aws credentials configured
 availableregions = boto3.session.Session().get_available_regions('ec2')
 reg = region_input()
+vpc_name = 'django-prod'
 
 #minimum ec2 describe permissions needed for the following boto calls
 ec2c = boto3.client('ec2', region_name=reg)
@@ -36,7 +36,7 @@ azresp = ec2c.describe_availability_zones(Filters=[{'Name':'state','Values':['av
 availableazs = [i['ZoneName'] for i in azresp['AvailabilityZones']]
 
 
-t = Template()
+t = Template()  # Start building the template
 
 t.add_version('2010-09-09')
 
@@ -47,17 +47,18 @@ t.add_resource(VPC(
     EnableDnsHostnames="true",
     Tags=Tags(
         Application=Ref("AWS::StackName"),
-        Network="{0} Spot Instance VPC".format(reg),
-        Name="{0} Spot Instance VPC".format(reg),
+        Network=f"{vpc_name} VPC",
+        Name=f"{vpc_name} VPC".format(reg),
     )
 ))
 
+# Add the internet gateway
 t.add_resource(InternetGateway(
     "InternetGateway",
     Tags=Tags(
         Application=Ref("AWS::StackName"),
-        Network="{0} Spot Instance VPC".format(reg),
-        Name="{0} Spot Instance VPC IGW".format(reg),
+        Network=f"{vpc_name} Spot Instance VPC",
+        Name=f"{vpc_name} VPC IGW",
     )
 ))
 
@@ -72,7 +73,7 @@ t.add_resource(NetworkAcl(
     VpcId=Ref("VPC"),
     Tags=Tags(
         Application=Ref("AWS::StackName"),
-        Network="{0} Spot Instance VPC".format(reg),
+        Network=f"{vpc_name} VPC",
     )
 ))
 
@@ -103,7 +104,7 @@ t.add_resource(RouteTable(
     VpcId=Ref("VPC"),
     Tags=Tags(
         Application=Ref("AWS::StackName"),
-        Network="{0} Spot Instance VPC".format(reg),
+        Network=f"{vpc_name} VPC",
         Name="Public IGW Routing Table"
     )
 ))
@@ -120,36 +121,44 @@ t.add_resource(Route(
 #in the same loop generate subnet associations for the network acl and the route table
 for i, az in list(enumerate(availableazs, start=1)):
     t.add_resource(Subnet(
-        "PublicSubnet{0}".format(i),
+        f"PublicSubnet-{az}",
         VpcId=Ref("VPC"),
-        CidrBlock="10.100.{0}.0/24".format(i),
-        AvailabilityZone="{0}".format(az),
+        CidrBlock=f"10.100.{i}.0/24",
+        AvailabilityZone=f"{az}",
         MapPublicIpOnLaunch=True,
         Tags=Tags(
             Application=Ref("AWS::StackName"),
-            Network="{0} Spot Instance VPC".format(reg),
+            Network=f"{vpc_name} VPC",
             Name=f"{az} Public Subnet {i}",
         )
     ))
     t.add_resource(
         SubnetNetworkAclAssociation(
             "SubnetNetworkAclAssociation{0}".format(i),
-            SubnetId=Ref("PublicSubnet{0}".format(i)),
+            SubnetId=Ref(f"PublicSubnet-{az}"),
             NetworkAclId=Ref("NetworkAcl"),
         )
     )
     t.add_resource(SubnetRouteTableAssociation(
         "SubnetRouteTableAssociation{0}".format(i),
-        SubnetId=Ref("PublicSubnet{0}".format(i)),
+        SubnetId=Ref(f"PublicSubnet-{az}"),
         RouteTableId=Ref("RouteTable"),
     ))
 
-#output the file path
-print("Generating VPC template for {0}".format(reg))
-print(os.path.join(os.getcwd(), "{0}-dynamic-vpc-{1}.template".format(reg, timestr)))
-#generate the cloudformation template as json
-# f = open("{0}-dynamic-vpc-{1}.template".format(reg, timestr),"w+")
-filename = f"drummonds-VPC-{reg}.template"
-f = open("{0}-dynamic-vpc-{1}.template".format(reg, timestr),"w+")
-f.write(t.to_json())
-f.close()
+
+def build_vpc_stack_template():
+    #output the file path
+    print(f"Generating VPC template for {vpc_name}")
+    #generate the cloudformation template as json
+    # f = open("{0}-dynamic-vpc-{1}.template".format(reg, timestr),"w+")
+    filename_base = f"drummonds-VPC-{vpc_name}"
+    filename = f"{filename_base}.template"
+    print(os.path.join(os.getcwd(), filename))
+    f = open(filename, "w+")
+    f.write(t.to_json())
+    f.close()
+    return filename
+
+
+if __name__  == '__main__':
+    build_vpc_stack_template()

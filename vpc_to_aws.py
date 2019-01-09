@@ -1,0 +1,1 @@
+"""Aim is to test if VPC is already launched and if not launched then to create it."""

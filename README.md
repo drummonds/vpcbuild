@@ -12,7 +12,7 @@ I am also using fabric so that I can remember all the commands I need.
 # Sources
 
 [Chris Allen] Blog PacketLlost - I have tried to follow this to see what happens   
-[Troposphere] : A library to allow building of AWS templates in Python.  This makes it easy to generate dyanmic sites 
+[Troposphere] : A library to allow building of AWS templates in Python.  This makes it easy to generate dynamic sites 
 depending on your Python code.   
 
 

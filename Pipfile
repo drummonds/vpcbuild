@@ -10,6 +10,9 @@ verify_ssl = true
 "fabric3" = "*"
 troposphere = "*"
 pyyaml = ">=4.2b1"
+fab-support = "*"
+unipath = "*"
+configparser = "*"
 
 [requires]
 python_version = "3.7"
