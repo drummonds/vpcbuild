@@ -5,6 +5,13 @@ import os
 from time import sleep
 from unipath import Path
 
+import environ
+
+# Load operating system environment variables and then prepare to use them
+dot_env = environ.Env()
+dot_env.read_env()
+
+
 from fabric.api import local, env, task
 
 from build_postgres import install_postgres
@@ -82,7 +89,7 @@ def do_it_all():
     build_nat()
 
 
-env.key_filename = 'C:/Users/HumphreyDrummond/CloudStation/Library/keys/aws/EUWest2KeyPair.pem'
+env.key_filename = dot_env.str('AWS_KEY_FILENAME')
 
 
 @task
@@ -106,11 +113,6 @@ def test_db():
     execute(test_command, hosts=host_list)
     execute(install_postgres, instance, hosts=host_list)
 
-import socket
-import time
-
-class ServerUpTimeOut(Exception):
-    pass
 
 @task
 def delete_test_db():
