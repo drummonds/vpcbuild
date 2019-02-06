@@ -68,7 +68,7 @@ dbpassword = t.add_parameter(Parameter(
 
 dbclass = t.add_parameter(Parameter(
     "DBClass",
-    Default="db.m1.small",
+    Default="db.t3.micro",
     Description="Database instance class",
     Type="String",
     AllowedValues=[
@@ -79,7 +79,7 @@ dbclass = t.add_parameter(Parameter(
       "db.r4.8xlarge", "db.r4.16xlarge", "db.x1e.xlarge", "db.x1e.2xlarge",
       "db.x1e.4xlarge", "db.x1e.8xlarge", "db.x1e.16xlarge", "db.x1e.32xlarge",
       "db.x1.16xlarge", "db.x1.32xlarge", "db.r3.large", "db.r3.xlarge",
-      "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.t2.micro",
+      "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.t3.micro",
       "db.t2.small", "db.t2.medium", "db.t2.large", "db.t2.xlarge",
       "db.t2.2xlarge"
     ],
